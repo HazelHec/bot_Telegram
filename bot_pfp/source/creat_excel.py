@@ -61,27 +61,23 @@ def creat_densidad(chatId, dt, y, alpha, ac, at, b, atm, bt, A, B, mc, densidadL
     else:
         sheet["L11"] = "z"
         sheet["L11"].fill = fill
-
         sheet["L12"] = z
+        
         sheet["L13"] = "z1"
         sheet["L13"].fill = fill
-
         sheet["L14"] = z1
-        sheet["L15"] = "z2"
-        sheet["L15"].fill = fill
-
-        sheet["L16"] = z2
+    
         sheet["L17"] = "densidad del liquido"
         sheet["L17"].fill = fill
-
         sheet["L18"] = densidadL
+        
         sheet["L19"] = "densidad del gas"
         sheet["L19"].fill = fill
 
         sheet["L20"] = densidadG
 
     book.save(
-        f"C:\\Python_programs\\bot_Telegram\\bot_pfp\\resource\\datos{chatId}.xlsx")
+        f"./resource/datos{chatId}.xlsx")
 
 
 def creat_presion(chatId, dt, y, alpha, ac, at, b, atm, bt, A, B, mc, vc, vm, presion):
@@ -137,4 +133,4 @@ def creat_presion(chatId, dt, y, alpha, ac, at, b, atm, bt, A, B, mc, vc, vm, pr
     sheet["L12"] = presion
 
     book.save(
-        f"C:\\Python_programs\\bot_Telegram\\bot_pfp\\resource\\datos{chatId}.xlsx")
+        f"./resource/datos{chatId}.xlsx")

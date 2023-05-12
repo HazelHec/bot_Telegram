@@ -3,68 +3,46 @@ import decimal
 # lib para crear botones y para contestar un mensaje
 from telebot.types import ForceReply, ReplyKeyboardMarkup
 from source.conexion import conect1
-from source.srk_metodo import SRK
-import time
+from source.pr_metodo import peng_r
 "--------------------------------------------------------------------------------"
+#!SECTION Zona de variables globales
+# NOTE - Strings
+eleccion = str
 
-# Declaración de variables globales
-# variables
-lista = []
-dic = dict
-y = []
-contador = 0
+# NOTE - Flotantes y enteras
+chatId = int
 numeroDeElementos = int
 temperatura = float
 volumenCelda = float
 mc = float
 presion = float
 temperatura = float
-eleccion = str
 densidadl = float
 densidadg = float
 densidad = float
-chatId = int
+
+# NOTE - Diccionarios y listas
+lista = []
+dic = {}
+y = []
 
 
+# NOTE - Clases y objetos
 class ValueHolder:
     def __init__(self, value):
         self.value = value
 
 
-# numeroDeElementos = 5
-mmh7p = ValueHolder(None)
-tch7p = ValueHolder(None)
-pch7p = ValueHolder(None)
-fah7p = ValueHolder(None)
-yh7p = ValueHolder(None)
-
+mmh7p = ValueHolder(0)
+tch7p = ValueHolder(0)
+pch7p = ValueHolder(0)
+fah7p = ValueHolder(0)
+yh7p = ValueHolder(0)
 
 "--------------------------------------------------------------------------------"
-#!SECTION Funciones auxiliares
+#!SECTION Zona de funciones auxiliares
 
-
-def resetVariables():
-    global lista, dic, y, contador, numeroDeElementos, temperatura, volumenCelda, mc, presion, eleccion, densidadl, densidadg, densidad, mmh7p, tch7p, pch7p, fah7p, yh7p
-    lista = []
-    dic = {}
-    y = []
-    contador = 0
-    numeroDeElementos = 0
-    temperatura = 0.0
-    volumenCelda = 0.0
-    mc = 0.0
-    presion = 0.0
-    temperatura = 0.0
-    densidadl = 0.0
-    densidadg = 0.0
-    densidad = 0.0
-    mmh7p.value = 0.0
-    tch7p.value = 0.0
-    pch7p.value = 0.0
-    fah7p.value = 0.0
-    yh7p.value = 0.0
-
-# NOTE - Función para conexión a la base de datos
+# NOTE - Esta función conecta a la base de datos
 
 
 def aux(a):
@@ -76,7 +54,7 @@ def aux(a):
     conexion = conect1()
     cursor = conexion.cursor()
     # Query de consulta
-    query = f'''SELECT * FROM svk_datos 
+    query = f'''SELECT * FROM svk_datos
     where if((select count(*) from svk_datos where componente = '{a}') > 0,
     componente = '{a}', componente like '%{a}%');'''
     # Metodo para hacer consultas
@@ -105,6 +83,28 @@ def aux(a):
     conexion.close()
 
 
+def resetVariables():
+    global lista, dic, y, contador, numeroDeElementos, temperatura, volumenCelda, mc, presion, eleccion, densidadl, densidadg, densidad, mmh7p, tch7p, pch7p, fah7p, yh7p
+    lista = []
+    dic = {}
+    y = []
+    contador = 0
+    numeroDeElementos = 0
+    temperatura = 0.0
+    volumenCelda = 0.0
+    mc = 0.0
+    presion = 0.0
+    temperatura = 0.0
+    densidadl = 0.0
+    densidadg = 0.0
+    densidad = 0.0
+    mmh7p.value = 0.0
+    tch7p.value = 0.0
+    pch7p.value = 0.0
+    fah7p.value = 0.0
+    yh7p.value = 0.0
+
+
 def get_float_input(message, bot, set_variable, next_step):
     try:
         value = float(message.text)
@@ -125,53 +125,65 @@ def reiniciar(message, bot):
 
 
 "--------------------------------------------------------------------------------"
-# SECTION - Preguntar el volumen si se trata de la presión y la presión si se trata de la densidad
+#!SECTION Zona de funciones para obtener datos del método
+# NOTE - Función que inicia la calculadora
 
 
-def procesar_opcion(opcion, cid, bot):
+def ini(opcion, cid, bot):
+    resetVariables()
     global eleccion, chatId
+    # NOTE - Se agrega valor del chat id y del tipo de calculo
     eleccion = opcion
     chatId = cid
-    resetVariables()
-    if opcion == 'srk_presion':
+
+    if opcion == 'pr_presion':
         markup = ForceReply()
         msg = bot.send_message(
             cid, "Por favor, escribe la temperatura en Rankine.", reply_markup=markup)
-        bot.register_next_step_handler(msg, VolumenCelda, bot)
-    elif opcion == 'srk_densidad':
+        bot.register_next_step_handler(msg, presion_step1, bot)
+
+    elif opcion == 'pr_densidad':
         markup = ForceReply()
         msg = bot.send_message(
             cid, "Por favor, escribe la temperatura en Rankine.", reply_markup=markup)
-        bot.register_next_step_handler(msg, setPresion, bot)
+        bot.register_next_step_handler(msg, densidad_step1, bot)
 
 
 "--------------------------------------------------------------------------------"
-# SECTION - Elementos para problema de presión
+# SECTION - Obtener datos para presion
 
 
-def VolumenCelda(message, bot):
+# NOTE - Guardamos temperatura en variable global y preguntamos por el valor de la celda
+def presion_step1(message, bot):
     global temperatura
+    # Metodo para reiniciar el calculo
     if message.text.lower() == "reiniciar":
         reiniciar(message, bot)
+
+    # Excepción para saber si el dato introducido es flotante
     try:
         temperatura = float(message.text)
         markup = ForceReply()
         msg = bot.send_message(
             message.chat.id, "Escribe el volumen de la celda en ft^3", reply_markup=markup)
-        bot.register_next_step_handler(msg, RespuestaMc, bot)
+        bot.register_next_step_handler(msg, presion_step2, bot)
     except ValueError:
         markup = ForceReply()
         msg = bot.send_message(
             message.chat.id,
             "ERROR: Debes ingresar un número.\nPor favor, escribe la temperatura en Rankine.",
             reply_markup=markup)
-        bot.register_next_step_handler(msg, VolumenCelda, bot)
+        bot.register_next_step_handler(msg, presion_step1, bot)
 
 
-def RespuestaMc(message, bot):
+# NOTE - Guardamos el volumen de la celda y preguntamos por el MC
+def presion_step2(message, bot):
     global volumenCelda
+    # Metodo para reiniciar el calculo
     if message.text.lower() == "reiniciar":
         reiniciar(message, bot)
+
+    # Excepción para saber si el dato introducido es flotante
     try:
         volumenCelda = float(message.text)
         markup = ReplyKeyboardMarkup(
@@ -182,7 +194,7 @@ def RespuestaMc(message, bot):
         markup.add("Si", "No")
         msg = bot.send_message(
             message.chat.id, "¿Tienes el valor de mc?", reply_markup=markup)
-        bot.register_next_step_handler(msg, setMc, bot)
+        bot.register_next_step_handler(msg, presion_step3, bot)
 
     except ValueError:
         markup = ForceReply()
@@ -190,18 +202,22 @@ def RespuestaMc(message, bot):
             message.chat.id,
             "ERROR: Debes ingresar un número.\nEscribe el volumen de la celda en ft^3.",
             reply_markup=markup)
-        bot.register_next_step_handler(msg, RespuestaMc, bot)
+        bot.register_next_step_handler(msg, presion_step2, bot)
 
 
-def setMc(message, bot):
+# NOTE - Este pasó resive la respuesta del si hay mc o no
+def presion_step3(message, bot):
+    # Metodo para reiniciar el calculo
     if message.text.lower() == "reiniciar":
         reiniciar(message, bot)
+
+    # Variable que vale 1 si el usuario tiene el valor de mc
     mcsi = 1
     if message.text.lower() == "si":
         markup = ForceReply()
         msg = bot.send_message(
             message.chat.id, "Introduzca el valor de mc", reply_markup=markup)
-        bot.register_next_step_handler(msg, getElements, bot, mcsi)
+        bot.register_next_step_handler(msg, presion_step4, bot, mcsi)
     else:
         markup = ReplyKeyboardMarkup(
             one_time_keyboard=True,
@@ -211,85 +227,106 @@ def setMc(message, bot):
         markup.add("Continuar")
         msg = bot.send_message(
             message.chat.id, "Presiona continuar", reply_markup=markup)
-        bot.register_next_step_handler(msg, getElements, bot)
+        bot.register_next_step_handler(msg, presion_step4, bot)
+
+
+# NOTE - Guardamos el valor de mc y pasamos a all_data
+def presion_step4(message, bot, mcsi=0):
+    global mc
+    # Metodo para reiniciar el calculo
+    if message.text.lower() == "reiniciar":
+        reiniciar(message, bot)
+
+    # Excepción para saber si el dato introducido es flotante
+    try:
+        if mcsi == 1:
+            mc = float(message.text)
+        else:
+            mc = 0
+    except ValueError:
+        markup = ForceReply()
+        msg = bot.send_message(
+            message.chat.id,
+            "ERROR: Debes ingresar un número.\nPor favor, escribe el valor de mc.",
+            reply_markup=markup)
+        bot.register_next_step_handler(msg, presion_step4, bot)
+
+    print("Entrando a global data\n")
+    msg = bot.send_message(message.chat.id, "¿Cuántos elementos necesitas?")
+    bot.register_next_step_handler(msg, global_data, bot)
 
 
 "--------------------------------------------------------------------------------"
-# SECTION - Elementos para problema de densidad
+# SECTION - Obtener datos para densidad
 
 
-def setPresion(message, bot):
+# NOTE - Guardanos el valor de temperatura y preguntamos la presión
+def densidad_step1(message, bot):
     global temperatura
+    # Metodo para reiniciar el calculo
     if message.text.lower() == "reiniciar":
         reiniciar(message, bot)
+
+    # Excepción para saber si el dato introducido es flotante
     try:
         temperatura = float(message.text)
         markup = ForceReply()
         msg = bot.send_message(
             message.chat.id, "Escribe la presión en psia", reply_markup=markup)
-        bot.register_next_step_handler(msg, getElements, bot)
+        bot.register_next_step_handler(msg, densidad_step2, bot)
     except ValueError:
         markup = ForceReply()
         msg = bot.send_message(
             message.chat.id,
             "ERROR: Debes ingresar un número.\nPor favor, escribe la temperatura en Rankine.",
             reply_markup=markup)
-        bot.register_next_step_handler(msg, setPresion, bot)
+        bot.register_next_step_handler(msg, densidad_step1, bot)
 
 
-"--------------------------------------------------------------------------------"
-#!SECTION Metodos de tabulación y recopilación
-
-
-def getElements(message, bot, mcsi=0):
-    print("Entro correctamente getElement")
-    global eleccion, mc, presion
+# NOTE - Guardanos el valor de presión y pasamos a all_data
+def densidad_step2(message, bot):
+    global presion
+    # Metodo para reiniciar el calculo
     if message.text.lower() == "reiniciar":
         reiniciar(message, bot)
-    if (eleccion == "srk_presion"):
-        try:
-            if mcsi == 1:
-                mc = float(message.text)
-            else:
-                mc = 0
-        except ValueError:
-            markup = ForceReply()
-            msg = bot.send_message(
-                message.chat.id,
-                "ERROR: Debes ingresar un número.\nPor favor, escribe el valor de mc.",
-                reply_markup=markup)
-            bot.register_next_step_handler(msg, getElements, bot)
-    else:
-        try:
-            presion = float(message.text)
-        except ValueError:
-            markup = ForceReply()
-            msg = bot.send_message(
-                message.chat.id,
-                "ERROR: Debes ingresar un número.\nPor favor, escribe la presión en psia.",
-                reply_markup=markup)
-            bot.register_next_step_handler(msg, getElements, bot)
 
+    # Excepción para saber si el dato introducido es flotante
+    try:
+        presion = float(message.text)
+    except ValueError:
+        markup = ForceReply()
+        msg = bot.send_message(
+            message.chat.id,
+            "ERROR: Debes ingresar un número.\nPor favor, escribe la presión en psia.",
+            reply_markup=markup)
+        bot.register_next_step_handler(msg, densidad_step2, bot)
+
+    print("Entrando a global data\n")
     msg = bot.send_message(message.chat.id, "¿Cuántos elementos necesitas?")
-    bot.register_next_step_handler(msg, get_h7p, bot)
+    bot.register_next_step_handler(msg, global_data, bot)
 
 
 "--------------------------------------------------------------------------------"
-# SECTION - Recopilación de datos h7+
+# SECTION - Obtener datos para el uso de ambos problemas
 
 
-def get_h7p(message, bot):
+# NOTE - Guardamos el número de elementos y preguntamos por h7
+def global_data(message, bot):
     global numeroDeElementos
+    # Metodo para reiniciar el calculo
     if message.text.lower() == "reiniciar":
         reiniciar(message, bot)
+
+    # Metodo por el cual revisa si el número de elementos es un número
     if not message.text.isdigit():
         markup = ForceReply()
         msg = bot.send_message(
             message.chat.id,
-            "ERROR: Debes ingresar un número.\nPor favor, escribe los elementos necesitas.",
+            "ERROR: Debes ingresar un número.\nPor favor, escribe cuantos elementos necesitas.",
             reply_markup=markup)
-        bot.register_next_step_handler(msg, get_h7p, bot)
+        bot.register_next_step_handler(msg, global_data, bot)
     else:
+        # Excepción para saber si el dato introducido es entero
         try:
             numeroDeElementos = int(message.text)
         except ValueError:
@@ -302,13 +339,17 @@ def get_h7p(message, bot):
         markup.add("Si", "No")
         msg = bot.send_message(
             message.chat.id, "¿Uno de los elementos es h7+?", reply_markup=markup)
-        bot.register_next_step_handler(msg, get_mmh7p_values, bot)
+        bot.register_next_step_handler(msg, global_data_h7, bot)
 
 
-def get_mmh7p_values(message, bot):
+# NOTE - iniciamos proceso para obtener valores de h7 o pasar a la obtención de datos
+def global_data_h7(message, bot):
     global numeroDeElementos, mmh7p, tch7p, pch7p, fah7p, yh7p
+    # Metodo para reiniciar el calculo
     if message.text.lower() == "reiniciar":
         reiniciar(message, bot)
+
+    # Forma para saber si hay h7
     if message.text.lower() == "si":
         numeroDeElementos = numeroDeElementos-1
         # Masa molar de h7+
@@ -326,8 +367,12 @@ def get_mmh7p_values(message, bot):
         markup.add("Continuar")
         msg = bot.send_message(
             message.chat.id, "Presiona continuar", reply_markup=markup)
-        bot.register_next_step_handler(msg, elementos, bot)
+        bot.register_next_step_handler(msg, global_data_tabular, bot)
         print("Salida de h7")
+
+
+"--------------------------------------------------------------------------------"
+# SECTION - Obtenemos los datos necesarios para h7
 
 
 def get_tch7p_values(message, bot):
@@ -371,18 +416,23 @@ def get_yh7p_values(message, bot):
     msg = bot.send_message(
         message.chat.id, "Ingresa el porcentaje del h7+:", reply_markup=markup)
     bot.register_next_step_handler(msg, lambda m: get_float_input(
-        m, bot, lambda x: setattr(yh7p, 'value', x), lambda m, b: elementos(m, b)))
+        m, bot, lambda x: setattr(yh7p, 'value', x), lambda m, b: global_data_tabular(m, b)))
 
 
 "--------------------------------------------------------------------------------"
-# SECTION - Conclusión del ciclo e impresión de resultados
+# SECTION - Procesos de recompilación de datos
 
-
-def elementos(message, bot):
+# NOTE - Inicio de la tabulación, preguntar por el nombre
+def global_data_tabular(message, bot):
+    global contador, numeroDeElementos, dic, eleccion, densidadl, densidadg, densidad, presion
+    # Metodo para reiniciar el calculo
     if message.text.lower() == "reiniciar":
         reiniciar(message, bot)
-    print("\nEntrada elementos")
-    global contador, numeroDeElementos, dic, eleccion, densidadl, densidadg, densidad, presion
+
+    # Mensaje informativo
+    print("\nEntrada proceso de tabulación")
+
+    # Ordenamiento del h7
     h7p = {
         "Número": '7+',
         "Componente": 'Heptano Plus',
@@ -392,51 +442,21 @@ def elementos(message, bot):
         "Presión Critica": float(pch7p.value),
         "Factor acéntrico": float(fah7p.value)
     }
+
+    # proceso de tabulación
     if (contador < numeroDeElementos):
         markup = ForceReply()
         msg = bot.send_message(
             message.chat.id, f"Escribe el nombre del elemento {contador+1}: \n", reply_markup=markup)
-        bot.register_next_step_handler(msg, get_element_name, bot)
-    else:
-        if (mmh7p.value != 0):
-            lista.append(h7p)
-            y.append(float(yh7p.value))
-        print("Enviando informacion")
-        if eleccion == "srk_presion":
-            print(eleccion+'\n')
-            print(
-                f'{lista}\n{y}\n{temperatura}\n{numeroDeElementos}\n{volumenCelda}\n{mc}\n')
-            presion = SRK(chatId, lista, y, temperatura,
-                          numeroDeElementos, volumenCelda, mc)
-            bot.send_message(message.chat.id, f"La presión es {presion} psia")
-            excel = open(f'./resource/datos{chatId}.xlsx', 'rb')
-            bot.send_document(message.chat.id,excel,caption="Datos del proceso")
-            resetVariables()
-        else:
-            print(eleccion+'\n')
-            print(
-                f'{lista}\n{y}\n{temperatura}\n{numeroDeElementos}\n{volumenCelda}\n{mc}\n{presion}\n')
-            try:
-                densidadl, densidadg = SRK(chatId, lista, y, temperatura, numeroDeElementos,
-                                           volumenCelda, mc, presion)
-                bot.send_message(
-                    message.chat.id, f"la densidad liquida es {densidadl} lb/ft3 y la densidad del gas es {densidadg} lb/ft3")
-                excel = open(f'./resource/datos{chatId}.xlsx', 'rb')
-                bot.send_document(message.chat.id,excel,caption="Datos del proceso")
-                resetVariables()
-            except TypeError:
-                densidad = SRK(chatId, lista, y, temperatura, numeroDeElementos,
-                               volumenCelda, mc, presion)
-                bot.send_message(
-                    message.chat.id, f"la densidad es {densidad} lb/ft3")
-                excel = open(f'./resource/datos{chatId}.xlsx', 'rb')
-                bot.send_document(message.chat.id,excel,caption="Datos del proceso")
-                resetVariables()
+        bot.register_next_step_handler(msg, global_data_tabular_name, bot, h7p)
 
 
-def get_element_name(message, bot):
+# NOTE - Guardar nombre[datos] y preguntar por el porcentaje
+def global_data_tabular_name(message, bot, h7p):
+    # Metodo para reiniciar el calculo
     if message.text.lower() == "reiniciar":
         reiniciar(message, bot)
+
     nombre_elemento = message.text
     if (aux(nombre_elemento) is not None):
         markup = ForceReply()
@@ -445,7 +465,7 @@ def get_element_name(message, bot):
             f"Escribe el porcentaje del elemento {contador+1}: ",
             reply_markup=markup)
         bot.register_next_step_handler(
-            msg, get_element_percentage, nombre_elemento, bot)
+            msg, global_data_tabular_percentage, nombre_elemento, bot, h7p)
     else:
         markup = ForceReply()
         msg = bot.send_message(
@@ -453,13 +473,16 @@ def get_element_name(message, bot):
             "ERROR: El elemento no se encuentra en la base de datos \nEscribe nuevamente un elemento",
             reply_markup=markup)
         bot.register_next_step_handler(
-            msg, get_element_name, bot)
+            msg, global_data_tabular_name, bot, h7p)
 
 
-def get_element_percentage(message, nombre_elemento, bot):
+# NOTE - Guardar porcentaje y enviar información al método de salida
+def global_data_tabular_percentage(message, nombre_elemento, bot, h7p):
     global dic, y, contador, lista
+    # Metodo para reiniciar el calculo
     if message.text.lower() == "reiniciar":
         reiniciar(message, bot)
+
     porcentaje = message.text
     try:
         porcentaje = float(porcentaje)
@@ -468,7 +491,7 @@ def get_element_percentage(message, nombre_elemento, bot):
         contador += 1
         markup = ForceReply()
 
-        if (contador+1 == numeroDeElementos):
+        if (contador == numeroDeElementos):
             dic = lista
             markup = ReplyKeyboardMarkup(
                 one_time_keyboard=True,
@@ -478,7 +501,7 @@ def get_element_percentage(message, nombre_elemento, bot):
             markup.add("Continuar")
             msg = bot.send_message(
                 message.chat.id, "Presiona continuar", reply_markup=markup)
-            bot.register_next_step_handler(msg, elementos, bot)
+            bot.register_next_step_handler(msg, return_result, bot, h7p)
         else:
             markup = ReplyKeyboardMarkup(
                 one_time_keyboard=True,
@@ -488,7 +511,7 @@ def get_element_percentage(message, nombre_elemento, bot):
             markup.add("Continuar")
             msg = bot.send_message(
                 message.chat.id, "Presiona continuar", reply_markup=markup)
-            bot.register_next_step_handler(msg, elementos, bot)
+            bot.register_next_step_handler(msg, global_data_tabular, bot)
 
     except ValueError:
         markup = ForceReply()
@@ -497,4 +520,62 @@ def get_element_percentage(message, nombre_elemento, bot):
             "ERROR: Debes ingresar un número.\nEscribe el porcentaje del elemento:",
             reply_markup=markup)
         bot.register_next_step_handler(
-            msg, get_element_percentage, nombre_elemento, bot)
+            msg, global_data_tabular_percentage, nombre_elemento, bot, h7p)
+
+
+# NOTE - Método de salida
+def return_result(message, bot, h7p):
+    global contador, numeroDeElementos, dic, eleccion, densidadl, densidadg, densidad, presion, temperatura, volumenCelda, mc, chatId
+    if (mmh7p.value != 0):
+        lista.append(h7p)
+        y.append(float(yh7p.value))
+
+    # Mensaje informativo
+    print("Enviando informacion")
+
+    if eleccion == "pr_presion":
+        # Mensaje informativo
+        print(eleccion+'\n')
+        print(
+            f'{lista}\n{y}\n{temperatura}\n{numeroDeElementos}\n{volumenCelda}\n{mc}\n')
+        presion = peng_r(chatId, lista, y, temperatura,
+                      numeroDeElementos, volumenCelda, mc)
+
+        # Enviando Resultados al usuario
+        bot.send_message(message.chat.id, f"La presión es {presion} psia")
+        excel = open(f'./resource/datos{chatId}.xlsx', 'rb')
+        bot.send_document(message.chat.id, excel, caption="Datos del proceso")
+        resetVariables()
+    else:
+        # Mensaje informativo
+        print(eleccion+'\n')
+        print(
+            f'{lista}\n{y}\n{temperatura}\n{numeroDeElementos}\n{volumenCelda}\n{mc}\n{presion}\n')
+
+        # Enviando Resultados al usuario
+        try:
+            # Enviando respuesta
+            densidadl, densidadg = peng_r(chatId, lista, y, temperatura, numeroDeElementos,
+                                       volumenCelda, mc, presion)
+            bot.send_message(
+                message.chat.id, f"la densidad liquida es {densidadl} lb/ft3 y la densidad del gas es {densidadg} lb/ft3")
+
+            # Enviando excel
+            excel = open(f'./resource/datos{chatId}.xlsx', 'rb')
+            bot.send_document(message.chat.id, excel, caption="Datos del proceso")
+
+            # Reset de variables
+            resetVariables()
+        except TypeError:
+            # Enviando respuesta
+            densidad = peng_r(chatId, lista, y, temperatura, numeroDeElementos,
+                           volumenCelda, mc, presion)
+            bot.send_message(
+                message.chat.id, f"la densidad es {densidad} lb/ft3")
+
+            # Enviando excel
+            excel = open(f'./resource/datos{chatId}.xlsx', 'rb')
+            bot.send_document(message.chat.id, excel, caption="Datos del proceso")
+
+            # Reset de variables
+            resetVariables()

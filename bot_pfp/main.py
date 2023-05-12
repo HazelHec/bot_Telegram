@@ -61,7 +61,7 @@ def cmd_opciones(message):
     )
 
 
-@ bot.message_handler(commands=["datos_srk"])
+@ bot.message_handler(commands=["datos_calculadora"])
 def cmd_pruebas(message):
     rt_datos = open('./resource/SRK.pdf', 'rb')
     bot.send_document(message.chat.id, document=rt_datos,
@@ -100,6 +100,9 @@ def call_opciones(call):
             cid,
             con.mxm
         )
+        
+    #NOTE - Caso Calculadora
+        
     elif call.data == "cal_srk":
 
         callback.srk(cid, bot)
@@ -111,15 +114,22 @@ def call_opciones(call):
         )
 
     elif call.data == "cal_pr":
-        bot.send_message(
-            cid,
-            con.mxm
-        )
+        callback.pr(cid, bot)
+        
+        
+        
+        #NOTE - Caso Soave Rendinch kwong
     elif call.data == "srk_presion":
         source['srk_calculadora'].procesar_opcion(call.data, cid, bot)
 
     elif call.data == "srk_densidad":
         source['srk_calculadora'].procesar_opcion(call.data, cid, bot)
+        #NOTE - Caso Peng Robinson
+    elif call.data == "pr_presion":
+        source['pr_calculadora'].ini(call.data, cid, bot)
+
+    elif call.data == "pr_densidad":
+        source['pr_calculadora'].ini(call.data, cid, bot)
     
     
     # Forma para borrar todos los botones una vez leidos
@@ -149,7 +159,7 @@ if __name__ == '__main__':
         telebot.types.BotCommand(
             "/opciones", "Opciones de las acciones del bot"),
         telebot.types.BotCommand(
-            "/datos_srk", "Datos utilizados para los calculos"),
+            "/datos_calculadora", "Datos utilizados para los calculos"),
         telebot.types.BotCommand("/codigo_srk", "codigo de SRK")
     ])
     print("iniciando el bot")
