@@ -14,4 +14,6 @@ f_comando = """Este comando no esta disponible"""
 
 modulosPath="C:\\Python_programs\\bot_Telegram\\bot_pfp\\source"
 
+base = "svk_datos"
+
 

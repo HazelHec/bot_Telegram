@@ -54,8 +54,8 @@ def aux(a):
     conexion = conect1()
     cursor = conexion.cursor()
     # Query de consulta
-    query = f'''SELECT * FROM svk_datos
-    where if((select count(*) from svk_datos where componente = '{a}') > 0,
+    query = f'''SELECT * FROM {con.base}
+    where if((select count(*) from {con.base} where componente = '{a}') > 0,
     componente = '{a}', componente like '%{a}%');'''
     # Metodo para hacer consultas
     cursor.execute(query)
